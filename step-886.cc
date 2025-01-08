@@ -144,7 +144,7 @@ namespace Step886
       LA::MPI::Vector completely_distributed_solution_damage;
       LA::MPI::Vector system_rhs_damage;
       const QGauss<2> quadrature_formula_damage;
-      const QGauss<2> face_quadrature_formula_damage;
+      const QGauss<1> face_quadrature_formula_damage;
 
       class MyQData : public TransferableQuadraturePointData
       {
