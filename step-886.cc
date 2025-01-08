@@ -538,8 +538,6 @@ namespace Step886
     const FEValuesExtractors::Scalar u_x(0);
     const FEValuesExtractors::Scalar u_y_top(1);
     const FEValuesExtractors::Scalar u_y_bottom(1);
-    const FEValuesExtractors::Scalar u_z(2);
-
     const ComponentMask u_x_mask = fe_elastic.component_mask(u_x);
     const ComponentMask u_y_mask_bottom = fe_elastic.component_mask(u_y_bottom);
     const ComponentMask u_y_mask_top = fe_elastic.component_mask(u_y_top);
