@@ -2,7 +2,6 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/timer.h>
 #include <deal.II/lac/generic_linear_algebra.h>
-
 #define FORCE_USE_OF_TRILINOS
 namespace LA
 {
@@ -186,9 +185,9 @@ namespace Step886
       const double x_max = 10;
       const double y_max = 10;
 
-      const double uy = 1e-5; // increment in loading
+      const double uy = 10*1e-5; // increment in loading
       const double l = 3.5e-2; // length scale parameter
-      const unsigned int num_load_steps = 2500; // number of load steps
+      const unsigned int num_load_steps = 300;//2500; // number of load steps
       const double tol = 1e-2; // tolerance for error in solution
       const double GC = 2e-4; //energy release rate
       const double E = 30;
@@ -203,7 +202,7 @@ namespace Step886
   lambda (const double E,
       const double nu, const double beta, const Point<2> &p )
   {
-    if (p[1] < 0.8*p[0]+1) // Point lies below the interface
+    if (p[1] > 0.8*p[0]+1) // Point lies below the interface
       return (E * nu) / ((1 + nu) * (1 - 2 * nu));
   else
     return ((E/beta) * nu) / ((1 + nu) * (1 - 2 * nu));
@@ -213,7 +212,7 @@ namespace Step886
   mu (const double E,
       const double nu, const double beta, const Point<2> &p)
   {
-    if (p[1] < 0.8*p[0]+1) // Point lies below the interface
+    if (p[1] > 0.8*p[0]+1) // Point lies below the interface
           return E / (2 * (1 + nu));
     else
     return (E/beta) / (2 * (1 + nu));
@@ -226,7 +225,7 @@ namespace Step886
         const Point<2> &p)
     {
       //if ((std::fabs(0.8*p[0]-p[1]+1)/std::sqrt(0.8*0.8 + 1))-interface_width<=1e-4) // check the distance of the point from interface line
-    if (p[1] < 0.8*p[0]+1) // Point lies below the interface
+    if (p[1] > 0.8*p[0]+1) // Point lies below the interface
       return GC;
     else
       return GC/beta;
@@ -354,20 +353,21 @@ namespace Step886
   PhaseField::setup_mesh_and_bcs ()
 
   {
-    const unsigned int nx = 64;
+    /*const unsigned int nx = 64;
     const unsigned int ny = 10;
     const std::vector<unsigned int> repetitions = {nx,ny};
 
     const Point<2> p1(x_min,y_min), p2(x_max,y_max);
 
     GridGenerator::subdivided_hyper_rectangle (triangulation, repetitions, p1,
-        p2); // create coarse mesh
+        p2);*/ // create coarse mesh
 
-    /*GridIn<2> grid_in;
+    GridIn<2> grid_in;
     grid_in.attach_triangulation(triangulation);
 
-    std::ifstream f("Inclined_wasim2d.msh");
-    grid_in.read_msh(f);*/
+    std::ifstream f("IncInt2DGeoPG4.msh");
+    //std::ifstream f("BIM_inc_validation_new2");
+    grid_in.read_msh(f);
 
     // The boundary ids need to be setup right after the mesh is generated (before any refinement) and ids need to be setup using all cells and not just the locally owned cells
 
@@ -392,7 +392,8 @@ namespace Step886
               }
           }
       }
-    triangulation.refine_global(0);
+    //triangulation.coarsen_global();
+    triangulation.refine_global(1);
 
 
     pcout << "No. of levels in triangulation: "
@@ -538,6 +539,7 @@ namespace Step886
     const FEValuesExtractors::Scalar u_x(0);
     const FEValuesExtractors::Scalar u_y_top(1);
     const FEValuesExtractors::Scalar u_y_bottom(1);
+
     const ComponentMask u_x_mask = fe_elastic.component_mask(u_x);
     const ComponentMask u_y_mask_bottom = fe_elastic.component_mask(u_y_bottom);
     const ComponentMask u_y_mask_top = fe_elastic.component_mask(u_y_top);
@@ -825,7 +827,7 @@ namespace Step886
     FEValues <2> fe_values_damage (fe_damage, quadrature_formula_damage,
         update_values | update_gradients | update_JxW_values
         | update_quadrature_points);
-    FEFaceValues <1> fe_face_values_damage (fe_damage, face_quadrature_formula_damage,
+    FEFaceValues <2> fe_face_values_damage (fe_damage, face_quadrature_formula_damage,
                         update_values | update_quadrature_points |
                         update_normal_vectors |  update_JxW_values);
     FEValues <2> fe_values_elastic (fe_elastic, quadrature_formula_damage,
@@ -1031,7 +1033,7 @@ namespace Step886
     Tensor < 1, 2 > y_max_force; //force vector on the y_max face
 
     const QGauss < 1 > face_quadrature (fe_elastic.degree);
-    FEFaceValues <1> fe_face_values (fe_elastic, face_quadrature,
+    FEFaceValues <2> fe_face_values (fe_elastic, face_quadrature,
         update_gradients | update_quadrature_points| update_normal_vectors);
     std::vector<SymmetricTensor<2, 2>> strain_values (face_quadrature.size ());
     const FEValuesExtractors::Vector displacements (0);
@@ -1123,7 +1125,7 @@ namespace Step886
     solve_linear_system_damage ();
   }
 
-  void
+ void
   PhaseField::refine_grid (const unsigned int load_step)
   {
     FEValues <2> fe_values_damage (fe_damage, quadrature_formula_damage,
@@ -1140,7 +1142,7 @@ namespace Step886
         triangulation.n_locally_owned_active_cells ());
 
     KellyErrorEstimator <2> ::estimate (dof_handler_damage,
-        QGauss < 2 > (fe_damage.degree + 1),
+        QGauss < 1 > (fe_damage.degree + 1),
           { }, locally_relevant_solution_damage, estimated_error_per_cell);
 
     // Initialize SolutionTransfer object
@@ -1455,3 +1457,4 @@ main (int argc,
 
 }
 
+   
